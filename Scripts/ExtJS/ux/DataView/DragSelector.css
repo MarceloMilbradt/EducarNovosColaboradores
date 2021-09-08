@@ -1,0 +1,17 @@
+.x-view-selector {
+    position: absolute;
+    border: 1px dotted #3399BB;
+}
+
+.thumb-wrap {
+    float: left;
+    margin: 4px;
+    margin-right: 0;
+    padding: 3px;
+}
+
+.x-item-selected {
+    background: #DFEDFF;
+    border: 1px solid #6593cf;
+    padding: 6px;
+}

@@ -1,0 +1,252 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+}
+<link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
+<script src="https://unpkg.com/vue@next"></script>
+
+
+<h2>BackEnd Resquest Testes</h2>
+<div id="app">
+    <div>
+        <form>
+            <label for="action">Controller</label>
+            <input type="text" v-model="controller">
+
+            <label for="action">Action</label>
+            <input type="text" v-model="action" id="action">
+
+            <label for="action">Metodo</label>
+            <select v-model="type">
+                <option disabled value="">Selecione o metodo</option>
+                <option>GET</option>
+                <option>POST</option>
+                <option>DELETE</option>
+            </select>
+
+            <div>
+                <label style="margin:0 25px 25px 0">
+                    Parametros
+                </label>
+                <span class="add" @@Click="addParam()">
+                    <i class="far fa-plus-square"></i>
+                </span>
+            </div>
+
+            <div class="param" v-for="(param, index) in params">
+                Nome<input type="text" v-model="param.name">
+                Valor<textarea type="text" v-model="param.value"></textarea>
+                <div @@Click="deleteParam(index)">
+                    <i class="fas fa-trash-alt"></i>
+                </div>
+            </div>
+
+        </form>
+        <hr />
+
+        <div class="footer">
+            <div style="     max-width: 35vw;  word-break: break-word;">
+                <span v-if="controller">/{{controller}}</span>
+                <span v-if="action">/{{action}}</span>
+                <span v-if="params[0]?.name">?{{listParameters().map(([name, value]) => name ? `${name}=${value}` :'' ).join('&')}}</span>
+            </div>
+            <span class="send" @@Click="sendRequest()">
+                <i class="far fa-paper-plane"></i>
+            </span>
+        </div>
+
+        <div v-if="executed" class="footer request">
+            <details>
+                <summary>AJAX Request</summary>
+                <samp>{{getRequestString()}}</samp>
+            </details>
+        </div>
+
+    </div>
+    <div class="output">
+        <h4 :style="{color : color }">
+            <i class="fas fa-circle"></i>
+            {{statusCode}}
+        </h4>
+        @*<div v-if="typeof output == 'object'"><p v-for="(value, name) in output"><b>{{name}}</b>:<samp>{{value}}</samp></p></div>*@
+        @*<div v-else> <samp>{{output}}</samp></div>*@
+        <div> <samp v-if="output"> <pre>{{output}}</pre></samp></div>
+    </div>
+</div>
+<script>
+    Vue.createApp({
+        data() {
+            return {
+                controller: '',
+                action: '',
+                type: 'GET',
+                output: "",
+                color: 'white',
+                statusCode: '',
+                params: [],
+                executed: false,
+            }
+        },
+        methods: {
+            deleteParam: function (i) {
+                this.params.splice(i, 1);
+            },
+            addParam: function () {
+                this.params.push({ name: "", value: "" })
+            },
+            sendRequest: function () {
+                let controller = this.controller,
+                    action = this.action,
+                type = this.type;
+
+                let url = `/${controller?.trim()}/${action?.trim()}`
+                let data = Object.fromEntries(this.listParameters())
+                let retorno, status;
+                $.ajax(
+                    {
+                        url,
+                        type,
+                        data,
+                        async: false,
+                        success: function (data, textStatus, jqXHR) {
+
+                            status = jqXHR.status
+                            if (typeof data == "string")
+                                retorno = JSON.stringify(JSON.parse(data),null,'\t')
+                            else
+                                retorno = data
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            status = jqXHR.status
+                            retorno = ''
+                        }
+                    }
+                )
+
+                this.output = retorno;
+                this.statusCode = status;
+                this.color = this.getColor(status)
+                this.executed = true
+            },
+            listParameters: function () {
+                return this.params.map(({ name, value }) => [name?.trim(), (/[\[\{]/.test(value[0])?JSON.stringify(value?.trim()):value )]);
+            },
+            getColor: function (status) {
+                if (status == 200)
+                    return 'limegreen'
+
+                return 'red'
+            },
+            getRequestString: function () {
+                return `
+    $.ajax({
+            url: "${(this.controller ? '/' + this.controller : '')}${(this.action ? '/' + this.action : '')}",
+            type: '${this.type}',
+            data: {
+                ${(this.listParameters().map(([ name, value ]) => name ? `${name}:${value},` : '').join('\n'))}
+            },
+            success: function (data) {
+                ...
+            },
+        })
+                `
+            },
+
+        }
+    }).mount('#app')
+
+</script>
+
+<style>
+    #app {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        gap: 10px
+    }
+
+        #app form {
+            display: flex;
+            flex-direction: column;
+        }
+
+            #app form > input, #app form > select {
+                margin-bottom: 25px
+            }
+
+        #app .param {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            align-items: flex-start;
+            margin-bottom: 25px
+        }
+
+    .param textarea {
+        height: 26px
+    }
+
+    #app pre {
+        tab-size: 5;
+    }
+
+    #app i {
+        cursor: pointer
+    }
+
+    .param i:hover {
+        color: red;
+        font-size: 16px;
+    }
+
+    .add i {
+        font-size: 20px;
+        color: green
+    }
+
+        .add i:hover {
+            font-size: 21px;
+        }
+
+    .footer {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 50px;
+    }
+
+        .footer.request {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+
+    .send i {
+        float: right;
+        font-size: 25px;
+        color: deepskyblue
+    }
+
+        .send i:hover {
+            font-size: 26px;
+        }
+
+    .output {
+        margin: 0 auto;
+    }
+
+    #app > div {
+        padding: 25px;
+        min-width: 50%;
+        box-shadow: 0 2px 7px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
+    }
+
+    #app summary {
+        display: list-item;
+        cursor: pointer;
+    }
+
+    #app .fas.fa-circle {
+        cursor: default !important
+    }
+</style>
