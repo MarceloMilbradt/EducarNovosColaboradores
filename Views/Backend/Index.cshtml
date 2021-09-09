@@ -8,7 +8,7 @@
 
 <h2>BackEnd Resquest Testes</h2>
 <div id="app">
-    <div>
+    <div class="call">
         <form>
             <label for="action">Controller</label>
             <input type="text" v-model="controller">
@@ -34,7 +34,7 @@
             </div>
 
             <div class="param" v-for="(param, index) in params">
-                Nome<input type="text" v-model="param.name">
+                Nome<input type="text" style="width: 100px;" v-model="param.name">
                 Valor<textarea type="text" v-model="param.value"></textarea>
                 <div @@Click="deleteParam(index)">
                     <i class="fas fa-trash-alt"></i>
@@ -48,7 +48,7 @@
             <div style="     max-width: 35vw;  word-break: break-word;">
                 <span v-if="controller">/{{controller}}</span>
                 <span v-if="action">/{{action}}</span>
-                <span v-if="params[0]?.name">?{{listParameters().map(([name, value]) => name ? `${name}=${value}` :'' ).join('&')}}</span>
+                <span v-if="params[0]?.name">?{{listParameters().map(([name, value]) => name ? `${name}=${encodeURI(value)}` :'' ).join('&')}}</span>
             </div>
             <span class="send" @@Click="sendRequest()">
                 <i class="far fa-paper-plane"></i>
@@ -98,7 +98,7 @@
                 let controller = this.controller,
                     action = this.action,
                 type = this.type;
-
+                
                 let url = `/${controller?.trim()}/${action?.trim()}`
                 let data = Object.fromEntries(this.listParameters())
                 let retorno, status;
@@ -129,7 +129,7 @@
                 this.executed = true
             },
             listParameters: function () {
-                return this.params.map(({ name, value }) => [name?.trim(), (/[\[\{]/.test(value[0])?JSON.stringify(value?.trim()):value )]);
+                return this.params.map(({ name, value }) => [name?.trim(), value ]);
             },
             getColor: function (status) {
                 if (status == 200)
@@ -158,6 +158,9 @@
 </script>
 
 <style>
+    .container {
+        width: 80vw;
+    }
     #app {
         display: flex;
         flex-direction: row;
@@ -233,13 +236,16 @@
 
     .output {
         margin: 0 auto;
+        min-width: 40%
     }
 
     #app > div {
         padding: 25px;
-        min-width: 50%;
         box-shadow: 0 2px 7px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
     }
+    .call {
+        min-width: 60%
+    }  
 
     #app summary {
         display: list-item;
@@ -248,5 +254,9 @@
 
     #app .fas.fa-circle {
         cursor: default !important
+    }
+
+    textarea {
+        max-width: unset;
     }
 </style>
