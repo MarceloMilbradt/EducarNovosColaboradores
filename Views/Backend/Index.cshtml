@@ -4,17 +4,19 @@
 }
 <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
 <script src="https://unpkg.com/vue@next"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.5.5/jsoneditor.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.5.5/jsoneditor-minimalist.map"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.5.5/jsoneditor.min.css" />
 
 <h2>BackEnd Resquest Testes</h2>
 <div id="app">
     <div class="call">
         <form>
             <label for="action">Controller</label>
-            <input type="text" v-model="controller">
+            <input name="controller" type="text" v-model="controller">
 
             <label for="action">Action</label>
-            <input type="text" v-model="action" id="action">
+            <input name="action" type="text" v-model="action" id="action" @@keyup.enter="sendRequest()">
 
             <label for="action">Metodo</label>
             <select v-model="type">
@@ -33,14 +35,38 @@
                 </span>
             </div>
 
+
             <div class="param" v-for="(param, index) in params">
                 Nome<input type="text" style="width: 100px;" v-model="param.name">
                 Valor<textarea type="text" v-model="param.value"></textarea>
+
                 <div @@Click="deleteParam(index)">
                     <i class="fas fa-trash-alt"></i>
                 </div>
             </div>
+            <div>
+                <label style="margin:0 25px 25px 0">
+                    Json
+                </label>
 
+                <span class="add" v-if="!json" @@Click="addJson()">
+                    <i class="far fa-plus-square"></i>
+                </span>
+
+                <span class="" v-if="json" @@Click="deleteJson()">
+                    <i class="fas fa-trash-alt"></i>
+                </span>
+
+            </div>
+            <div v-if="json" class="json">
+                <div>
+                    Nome do parametro <input style="margin-left:10px" type="text" name="json" style="" v-model="jsonName">
+                    <span class="send" @@Click="sendRequest()">
+                        <i class="far fa-paper-plane"></i>
+                    </span>
+                </div>
+                <div id="jsoneditor"></div>
+            </div>
         </form>
         <hr />
 
@@ -63,15 +89,32 @@
         </div>
 
     </div>
-    <div class="output">
+    <div class="output" v-if="!erro">
         <h4 :style="{color : color }">
             <i class="fas fa-circle"></i>
             {{statusCode}}
         </h4>
-        @*<div v-if="typeof output == 'object'"><p v-for="(value, name) in output"><b>{{name}}</b>:<samp>{{value}}</samp></p></div>*@
-        @*<div v-else> <samp>{{output}}</samp></div>*@
-        <div> <samp v-if="output"> <pre>{{output}}</pre></samp></div>
+        <div v-if="typeof output == 'object' && output.length > 0">
+            <div v-for="(value, name) in output">
+                <span class="use" @@Click="getJson(name)">
+                    <i class="fas fa-edit"></i>
+                </span>
+                <b>{{name}}</b>
+                <samp> <pre @@dblclick="getJson(name)">{{value}}</pre></samp>
+            </div>
+        </div>
+        <div v-else>
+            <div v-if="output">
+                <span class="use" @@Click="getJson()">
+                    <i class="fas fa-edit"></i>
+                </span>
+                <samp> <pre @@dblclick="getJson()">{{output}}</pre></samp>
+            </div>
+        </div>
+        @*<div> <samp v-if="output"> <pre>{{output}}</pre></samp></div>*@
     </div>
+    <iframe id="erro" v-else class="output" :src="erro"></iframe>
+
 </div>
 <script>
     Vue.createApp({
@@ -79,29 +122,60 @@
             return {
                 controller: '',
                 action: '',
-                type: 'GET',
+                type: 'POST',
                 output: "",
                 color: 'white',
                 statusCode: '',
                 params: [],
+                json: null,
+                editor: null,
+                jsonName: "",
+                erro:false,
                 executed: false,
             }
         },
         methods: {
-            deleteParam: function (i) {
+            deleteParam(i) {
                 this.params.splice(i, 1);
             },
-            addParam: function () {
+            addParam() {
                 this.params.push({ name: "", value: "" })
             },
-            sendRequest: function () {
+            deleteJson() {
+                this.json = null;
+            },
+            getJson(i) {
+                this.deleteJson()
+                let retorno = i != null ? this.output[i] : this.output
+                setTimeout(() => this.addJson(retorno), 200)
+            },
+            getJsonValue() {
+                const json = this.editor.get();
+                return JSON.stringify(json);
+            },
+            addJson(json = {}) {
+                this.json = json;
+                setTimeout(() => {
+                    const container = document.getElementById('jsoneditor')
+                    const options = {
+                    }
+                    this.editor = new JSONEditor(container, options)
+                    this.editor.set(this.json)
+                }, 200);
+
+            },
+            sendRequest() {
                 let controller = this.controller,
                     action = this.action,
-                type = this.type;
-                
-                let url = `/${controller?.trim()}/${action?.trim()}`
-                let data = Object.fromEntries(this.listParameters())
-                let retorno, status;
+                    type = this.type;
+                let url = `/${controller?.trim()}/${action?.trim()}`;
+                let data = { ...Object.fromEntries(this.listParameters()) };
+                if (this.json) {
+                    data[this.jsonName] = this.getJsonValue()
+                }
+                console.log(data)
+
+                let retorno, status, erro;
                 $.ajax(
                     {
                         url,
@@ -109,41 +183,47 @@
                         data,
                         async: false,
                         success: function (data, textStatus, jqXHR) {
-
                             status = jqXHR.status
-                            if (typeof data == "string")
-                                retorno = JSON.stringify(JSON.parse(data),null,'\t')
-                            else
+                            erro = false
+                            try {
+                                if (typeof data == "string")
+                                    retorno = JSON.parse(data)
+                                else
+                                    retorno = data
+                            } catch (ex) {
                                 retorno = data
+                            }
                         },
                         error: function (jqXHR, textStatus, errorThrown) {
                             status = jqXHR.status
                             retorno = ''
+                            erro = 'data:text/html;charset=utf-8,' + encodeURI(jqXHR.responseText)
                         }
                     }
                 )
 
                 this.output = retorno;
                 this.statusCode = status;
+                this.erro = erro;
                 this.color = this.getColor(status)
                 this.executed = true
             },
-            listParameters: function () {
-                return this.params.map(({ name, value }) => [name?.trim(), value ]);
+            listParameters() {
+                return this.params.map(({ name, value }) => [name?.trim(), value]);
             },
-            getColor: function (status) {
+            getColor(status) {
                 if (status == 200)
                     return 'limegreen'
 
                 return 'red'
             },
-            getRequestString: function () {
+            getRequestString() {
                 return `
     $.ajax({
             url: "${(this.controller ? '/' + this.controller : '')}${(this.action ? '/' + this.action : '')}",
             type: '${this.type}',
             data: {
-                ${(this.listParameters().map(([ name, value ]) => name ? `${name}:${value},` : '').join('\n'))}
+                ${(this.listParameters().map(([name, value]) => name ? `${name}:${value},` : '').join('\n'))}
             },
             success: function (data) {
                 ...
@@ -158,9 +238,37 @@
 </script>
 
 <style>
+    .json {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    #jsoneditor {
+        height: 500px;
+    }
+
+    .use {
+        margin-right: 10px
+    }
+
+        .use:hover {
+            color: blue
+        }
+
     .container {
         width: 80vw;
     }
+
+    pre {
+        margin-top: 10px;
+        transition: all .2s ease-in-out;
+    }
+
+        pre:hover {
+            transform: scale(1.04);
+        }
+
     #app {
         display: flex;
         flex-direction: row;
@@ -190,6 +298,7 @@
     }
 
     #app pre {
+        cursor: pointer;
         tab-size: 5;
     }
 
@@ -197,7 +306,7 @@
         cursor: pointer
     }
 
-    .param i:hover {
+    .fas.fa-trash-alt:hover {
         color: red;
         font-size: 16px;
     }
@@ -243,9 +352,10 @@
         padding: 25px;
         box-shadow: 0 2px 7px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
     }
+
     .call {
         min-width: 60%
-    }  
+    }
 
     #app summary {
         display: list-item;
