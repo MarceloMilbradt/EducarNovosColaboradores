@@ -18,3 +18,4 @@ namespace NovosColaboradores.Entity
 		public virtual int situacao { get; set; }
 	}
 }
+ 

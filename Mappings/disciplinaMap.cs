@@ -7,7 +7,7 @@ using NovosColaboradores.Entity;
 
 namespace NovosColaboradores.Mapping
 {
-	public class DisciplinaMap
+	public class DisciplinaMap : ClassMap<Disciplina>
 	{
 		public DisciplinaMap()
 		{

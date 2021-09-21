@@ -7,7 +7,7 @@ using NovosColaboradores.Entity;
 
 namespace NovosColaboradores.Mapping
 {
-	public class TurmaMap
+	public class TurmaMap : ClassMap<Turma>
 	{
 		public TurmaMap()
 		{
