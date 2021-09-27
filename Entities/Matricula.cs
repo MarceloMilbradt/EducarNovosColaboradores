@@ -14,7 +14,7 @@ namespace NovosColaboradores.Entity
 		public virtual Turma turma_id { get; set; }
 		public virtual int ano { get; set; }
 		public virtual char turno { get; set; }
-		public virtual DateTime pessoa_id { get; set; }
+		public virtual DateTime datamatricula { get; set; }
 		public virtual int situacao { get; set; }
 	}
 }
