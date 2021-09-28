@@ -172,4 +172,3 @@ namespace NovosColaboradores.Controllers
         }
     }
 }
-
