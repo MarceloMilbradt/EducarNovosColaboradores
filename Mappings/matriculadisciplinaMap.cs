@@ -12,7 +12,7 @@ namespace NovosColaboradores.Mapping
 		public MatriculadisciplinaMap()
 		{
 			Table("public.matriculadisciplina");
-			Id(x => x.matricula_id).GeneratedBy.Sequence("matriculadisciplina_matriculadisciplina_id_seq").Column("matriculadisciplina_id");
+			Id(x => x.matriculadisciplina_id).GeneratedBy.Sequence("matriculadisciplina_matriculadisciplina_id_seq").Column("matriculadisciplina_id");
 			References(x => x.matricula_id).Column("matricula_id").LazyLoad();
 			References(x => x.disciplina_id).Column("disciplina_id").LazyLoad();
 		}
